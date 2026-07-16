@@ -1,0 +1,6 @@
+<script setup lang="ts">
+import { ref } from 'vue'; import { showFailToast } from 'vant'; import { useRouter } from 'vue-router'; import { useAuthStore } from '../stores/auth'; import { isConfigured } from '../services/supabase'
+const account=ref(''); const password=ref(''); const loading=ref(false); const auth=useAuthStore(); const router=useRouter()
+async function submit(){ if(!isConfigured) return showFailToast('请先配置 Supabase 环境变量'); loading.value=true; try{await auth.login(account.value.trim(),password.value); router.replace('/')}catch(e){showFailToast(e instanceof Error?e.message:'账号或密码错误')}finally{loading.value=false}}
+</script>
+<template><section class="login"><div class="brand-mark">↘</div><div class="eyebrow">LIGHT FIT · 每日一点改变</div><h1>轻盈打卡</h1><p class="lead">和熟悉的人一起，把坚持变成看得见的进步。</p><div class="card login-card"><van-form @submit="submit"><van-field v-model="account" label="账号" placeholder="请输入账号" autocomplete="username" :rules="[{required:true,message:'请输入账号'}]"/><van-field v-model="password" type="password" label="密码" placeholder="请输入密码" autocomplete="current-password" :rules="[{required:true,message:'请输入密码'}]"/><div style="margin-top:22px"><van-button round block type="primary" native-type="submit" :loading="loading">登录</van-button></div></van-form></div><p class="muted" style="text-align:center">账号由活动管理员统一创建</p></section></template>
