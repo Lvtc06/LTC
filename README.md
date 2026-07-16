@@ -1,6 +1,6 @@
 # 轻盈打卡
 
-面向约 10 人小型熟人减肥活动的手机端打卡网页。Vue 3 + Vite + Vant + Pinia + ECharts，登录、数据和权限由 Supabase 提供，静态网页可免费部署到 Cloudflare Pages。
+面向约 10 人小型熟人减肥活动的手机端打卡网页。Vue 3 + Vite + Vant + Pinia + ECharts，登录、数据和权限由 Supabase 提供，静态网页通过 GitHub Pages 免费部署。
 
 ## 已包含功能
 
@@ -83,14 +83,14 @@ on conflict(activity_id,user_id) do nothing;
 
 不要把真实测试密码写入源码、README 或 Git。
 
-## 5. 部署到 Cloudflare Pages
+## 5. 部署到 GitHub Pages
 
-1. 将项目推送到 GitHub，在 Cloudflare Dashboard 的 Workers & Pages 中导入仓库。
-2. Framework Preset 选择 Vue 或 Vite；Build Command 为 `npm run build`；Build output directory 为 `dist`。
-3. 在 Pages Settings → Variables and Secrets 添加 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_ANON_KEY`。
-4. 部署后，把正式 `pages.dev` 域名加入 Supabase Authentication 的 Site URL 与 Redirect URLs。
+1. 仓库 Settings → Pages 的 Source 选择 GitHub Actions。
+2. 仓库 Actions Secrets 添加 `VITE_SUPABASE_URL` 和 `VITE_SUPABASE_ANON_KEY`。
+3. 推送到 `main` 后，工作流自动构建并发布 `dist`。
+4. 把 `https://lvtc06.github.io/LTC/` 加入 Supabase Authentication 的 Site URL 与 Redirect URLs。
 
-`public/_redirects` 已配置单页应用回退，刷新 `/history` 等路由不会 404。完整步骤见 `DEPLOYMENT.md`。
+项目使用 Hash 路由，刷新子页面不会 404。完整步骤见 `DEPLOYMENT.md`。
 
 ## 常见问题
 
@@ -101,7 +101,7 @@ on conflict(activity_id,user_id) do nothing;
 - **权限 denied / RLS**：确认 `profiles.role` 正确；不要关闭 RLS 规避问题。
 - **排行榜无数据**：用户必须已加入同一活动；函数只对活动成员或管理员返回结果。
 - **Windows 禁止 npm.ps1**：使用 `npm.cmd`，无需修改系统执行策略。
-- **Cloudflare Pages 刷新子页面 404**：确认仓库包含 `public/_redirects` 并重新部署。
+- **GitHub Pages 资源 404**：确认生产基础路径为 `/LTC/`，并重新运行 Actions。
 
 ## 项目结构
 
@@ -116,5 +116,5 @@ src/
   views/        登录、首页、打卡、历史、趋势、排行、个人、管理页面
 supabase/schema.sql  建表、索引、约束、RLS 和排行榜函数
 .env.example         环境变量模板
-public/_redirects    Cloudflare Pages SPA 路由配置
+.github/workflows/   GitHub Pages 自动部署工作流
 ```

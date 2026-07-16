@@ -1,111 +1,66 @@
-# GitHub 与 Cloudflare Pages 部署手册
+# GitHub Pages 部署说明
 
-## 当前构建配置
-
-```text
-Framework preset: Vue（选择 Vite 也可以）
-Build command: npm run build
-Build output directory: dist
-Production branch: main
-```
-
-项目使用 Vue Router history 模式。`public/_redirects` 会在构建时复制成 `dist/_redirects`，将所有子路由回退到 `index.html`，避免刷新 `/history`、`/ranking`、`/profile` 或 `/admin` 时出现 404。
-
-## 上传 GitHub
-
-先在 https://github.com/new 创建空仓库 `light-fit-checkin`，不要让 GitHub自动创建 README、`.gitignore` 或 License。
-
-安装 Git for Windows 并重新打开 PowerShell，然后执行：
-
-```powershell
-cd 'C:\Users\Ltc\Documents\--'
-git init
-git branch -M main
-git config --global user.name "你的GitHub用户名"
-git config --global user.email "你的GitHub邮箱"
-git add .
-git status
-git commit -m "Initial commit: light fit check-in"
-git remote add origin https://github.com/你的用户名/light-fit-checkin.git
-git push -u origin main
-```
-
-`git status` 中不能出现 `.env`、`.env.local`、`node_modules`、`dist` 或日志文件。GitHub 推送时使用 Git Credential Manager 的浏览器授权，不能使用账户密码。
-
-如果远程地址已经存在：
-
-```powershell
-git remote set-url origin https://github.com/你的用户名/light-fit-checkin.git
-git push -u origin main
-```
-
-## Cloudflare Pages 导入 GitHub
-
-1. 登录 https://dash.cloudflare.com。
-2. 进入 **Workers & Pages**。
-3. 点击 **Create application → Pages → Import an existing Git repository**。
-4. 授权 GitHub，选择 `light-fit-checkin`，点击 **Begin setup**。
-5. 使用以下配置：
+当前生产地址：
 
 ```text
-Project name: light-fit-checkin（可修改，决定 pages.dev 地址）
-Production branch: main
-Framework preset: Vue（没有 Vue 时选 Vite）
-Build command: npm run build
-Build output directory: dist
-Root directory: /
+https://lvtc06.github.io/LTC/
 ```
 
-6. 在构建前配置 Production 和 Preview 环境变量：
+## 自动部署
+
+仓库的 `.github/workflows/deploy-pages.yml` 会在 `main` 分支每次推送后自动执行：
+
+```text
+npm ci
+npm run build
+上传 dist
+发布 GitHub Pages
+```
+
+GitHub Pages 项目站点位于 `/LTC/`，`vite.config.ts` 已设置生产资源基础路径。Vue Router 使用 Hash 模式，因此刷新 `/#/history`、`/#/ranking`、`/#/profile` 或 `/#/admin` 不会出现 404。
+
+## GitHub Secrets
+
+仓库 Settings → Secrets and variables → Actions 中必须存在：
 
 ```text
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
 ```
 
-只使用 Supabase Project URL 与 anon/publishable key。严禁使用 `service_role`、secret key 或数据库密码。
+只使用 Supabase Project URL 与 anon/publishable key。严禁配置 Service Role Key、secret key 或数据库密码。
 
-7. 点击 **Save and Deploy**。
+## 查看部署
 
-## Supabase 正式地址
+- Actions：`https://github.com/Lvtc06/LTC/actions`
+- Pages 设置：`https://github.com/Lvtc06/LTC/settings/pages`
+- 公网地址：`https://lvtc06.github.io/LTC/`
 
-部署后会得到类似：
+## Supabase 地址
 
-```text
-https://light-fit-checkin.pages.dev
-```
-
-进入 Supabase Dashboard → Authentication → URL Configuration：
+Supabase Dashboard → Authentication → URL Configuration：
 
 ```text
-Site URL: https://light-fit-checkin.pages.dev
+Site URL: https://lvtc06.github.io/LTC/
 Redirect URLs:
-https://light-fit-checkin.pages.dev/**
+https://lvtc06.github.io/LTC/**
 http://localhost:5173/**
 ```
 
-保存后，在 Cloudflare Pages 中触发一次新部署或重新部署。
+## 发布后验证
 
-## 查看公网地址
-
-进入 Cloudflare Dashboard → Workers & Pages → `light-fit-checkin` → Deployments。Production 部署卡片和项目顶部都会显示正式的 `*.pages.dev` 地址。
-
-## 部署后验证
-
-1. 手机关闭 Wi-Fi，使用移动网络打开 `pages.dev` 地址。
+1. 手机关闭 Wi-Fi，使用移动网络打开公网地址。
 2. 使用管理员或普通用户账号登录。
-3. 提交今日打卡，看到成功提示。
+3. 提交今日打卡并看到成功提示。
 4. 刷新页面并重新进入历史记录，确认记录仍存在。
 5. 打开体重趋势和排行榜。
 6. 分别测试微信内置浏览器与手机系统浏览器。
 
 ## 常见错误
 
-- **Build failed**：本地先运行 `npm.cmd run build`，检查 Cloudflare 的首条构建错误。
-- **环境变量缺失**：进入 Pages 项目 → Settings → Variables and Secrets，同时配置 Production 和 Preview，然后重新部署。
-- **Invalid API key**：Supabase URL 和 publishable key 必须来自同一项目。
-- **刷新子页面 404**：确认仓库存在 `public/_redirects`，构建日志结束后产物中应有 `dist/_redirects`。
-- **登录失败**：确认 Supabase Auth 用户已创建并 Auto Confirm，Site URL 已换成 `pages.dev` 地址。
-- **RLS 拒绝提交**：用户必须已经加入活动，普通用户只能提交中国时区当天记录。
-- **部署成功但白屏**：检查 Pages Deployment 日志以及浏览器控制台的第一条错误。
-- **微信打不开**：先用移动网络在系统浏览器验证；确认使用 HTTPS `pages.dev` 地址，不要发送 `localhost` 或 `127.0.0.1`。
+- **Actions 构建失败**：检查仓库 Secrets 是否齐全，并查看 Actions 第一条失败日志。
+- **页面空白或资源 404**：确认 `vite.config.ts` 的 GitHub Actions base 为 `/LTC/`。
+- **登录页提示缺少配置**：Secrets 名称必须与上文完全一致，修改后重新运行工作流。
+- **登录失败**：确认 Supabase Auth 用户已创建并 Auto Confirm。
+- **RLS 拒绝提交**：用户必须已加入活动，普通用户只能提交中国时区当天记录。
+- **微信打不开**：确认使用 HTTPS 公网地址，而不是 localhost 或 127.0.0.1。
